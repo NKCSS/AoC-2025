@@ -67,39 +67,11 @@ namespace AoC2025
             long half;
             foreach (List<long> range in Input.Split(',').Select(x => x.Split('-').AsInt64s()))
             {
-                //998-1012
                 start = range[0];
                 end = range[1];
                 invalidIds.AddRange(FindPossiblePatterns(start, end, 2));
-                continue;
-                startLength = start.ToString().Length;
-                if (startLength % 2 != 0)
-                {
-                    // Rond up to the next even numberd value.
-                    half = long.Parse("1" + new string('0', startLength / 2));
-                    start = long.Parse($"{half}{half}");
-                }
-                else
-                {
-                    half = long.Parse(start.ToString()[0..(startLength / 2)]);
-                    startMaybe = long.Parse($"{half}{half}");
-                    // we can only be out of range once, so account for it.
-                    if (startMaybe < start)
-                    {
-                        ++half;
-                        startMaybe = long.Parse($"{half}{half}");
-                    }
-                    start = startMaybe;
-                }
-                while (start <= end)
-                {
-                    invalidIds.Add(start);
-                    ++half;
-                    start = long.Parse($"{half}{half}");
-                }
             }
             p1 = invalidIds.Sum();
-            // Add implementation here...
             Console.WriteLine($"Part 1: {p1}");
             Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
