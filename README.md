@@ -16,3 +16,5 @@ I streamed the last few years and had a lot of fun. Like last year, I won't be a
 [Gist with some helper code I wrote (as promised on stream)](https://gist.github.com/NKCSS/ef9ea15b1cadb00a7d71e61082c09aa1)
 
 Want to compete? Here's my leaderboard code (only 200 people can join): 740496-17c5682a
+
+Want to join the live streams? You can follow them on [Twitch](https://twitch.tv/NKCSS) and [YouTube](https://nick.yt)
