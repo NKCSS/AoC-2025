@@ -11,7 +11,7 @@ namespace AoC2025
     public class Day3 : Solution
     {
         // Single char value can't be higher than this, so if we encounter it, we can stop looking.
-        const char max = '9';
+        const char MaxChar = '9';
         record Max(byte value, int index);
         bool Test = false;
         const long AnswerP1Test = 357, AnswerP2Test = 3121910778619, AnswerP1 = 17359, AnswerP2 = 172787336861064;
@@ -38,7 +38,7 @@ namespace AoC2025
                 {
                     biggestIndex = i;
                     biggest = value[i];
-                    if (biggest == max) break;
+                    if (biggest == MaxChar) break;
                 }
             }
             return new((byte)(biggest - '0'), biggestIndex);
