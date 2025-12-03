@@ -57,7 +57,25 @@ namespace AoC2025
         void Part2()
         {
             long p2 = 0L;
-            // Add implementation here...
+            List<(char largest, int index)> values = [];
+            char[] chars;
+            int lastIndex;
+            long localResult;
+            foreach (string line in Input.ToLines())
+            {
+                values.Clear();
+                chars = line.ToCharArray();
+                lastIndex = 0;
+                for (int i = 11; i >= 0; i--)
+                {
+                    var biggest = GetLargest(chars, lastIndex, i);
+                    values.Add(biggest);
+                    lastIndex = biggest.index + 1;
+                }
+                localResult = long.Parse(string.Join(string.Empty, values.Select(x => x.largest)));
+                Console.WriteLine($"{line} -> {localResult}");
+                p2 += localResult;
+            }
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
