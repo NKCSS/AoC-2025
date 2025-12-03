@@ -11,11 +11,10 @@ namespace AoC2025
     public class Day3 : Solution
     {
         bool Test = false;
-        const long AnswerP1Test = 357, AnswerP2Test = 3121910778619, AnswerP1 = 17359, AnswerP2 = -1L;
+        const long AnswerP1Test = 357, AnswerP2Test = 3121910778619, AnswerP1 = 17359, AnswerP2 = 172787336861064;
         public Day3() : base(3) {
             if (Test)
             {
-                // Paste test input here...
                 Input = """
                     987654321111111
                     811111111111119
