@@ -27,6 +27,7 @@ namespace AoC2025
         }
         (char largest, int index) GetLargest(char[] value, int start, int end)
         {
+            const char max = '9';
             char biggest = '0';
             int biggestIndex = 0;
             for (int i = start, last = value.Length - end; i < last; ++i)
@@ -35,6 +36,7 @@ namespace AoC2025
                 {
                     biggestIndex = i;
                     biggest = value[i];
+                    if (biggest == max) break;
                 }
             }
             return (biggest, biggestIndex);
@@ -50,7 +52,7 @@ namespace AoC2025
                 Console.WriteLine($"{line} -> {first.largest}{second.largest}");
                 p1 += long.Parse($"{first.largest}{second.largest}");
             }
-            Console.WriteLine($"Part 1: {p1}");
+            //Console.WriteLine($"Part 1: {p1}");
             Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
         void Part2()
@@ -72,7 +74,7 @@ namespace AoC2025
                     lastIndex = biggest.index + 1;
                 }
                 localResult = long.Parse(string.Join(string.Empty, values.Select(x => x.largest)));
-                Console.WriteLine($"{line} -> {localResult}");
+                //Console.WriteLine($"{line} -> {localResult}");
                 p2 += localResult;
             }
             Console.WriteLine($"Part 2: {p2}");
