@@ -1,10 +1,5 @@
 ﻿using NKCSS.AoC;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace AoC2025
 {
@@ -28,6 +23,7 @@ namespace AoC2025
             Part1();
             Part2();
         }
+        int optimizeCount = 0;
         Max GetLargest(char[] value, int start, int end)
         {
             char biggest = '0';
@@ -38,7 +34,11 @@ namespace AoC2025
                 {
                     biggestIndex = i;
                     biggest = value[i];
-                    if (biggest == MaxChar) break;
+                    if (biggest == MaxChar)
+                    {
+                        ++optimizeCount;
+                        break;
+                    }
                 }
             }
             return new((byte)(biggest - '0'), biggestIndex);
@@ -81,6 +81,7 @@ namespace AoC2025
                 p2 += localResult;
             }
             Console.WriteLine($"Part 2: {p2}");
+            Console.WriteLine($"Breaked early: {optimizeCount}/{Input.ToLines().Length}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
     }
