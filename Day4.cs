@@ -9,8 +9,9 @@ namespace AoC2025
     public class Day4 : Solution
     {
         bool Test = false;
+        const int MaxSurroundingRolls = 4;
         const char PaperMarker = '@';
-        const long AnswerP1Test = 13, AnswerP2Test = -1, AnswerP1 = 1569, AnswerP2 = -1L;
+        const long AnswerP1Test = 13, AnswerP2Test = 43, AnswerP1 = 1569, AnswerP2 = -1L;
         HashSet<GridLocation> paperRolls;
         int rowCount, colCount;
         public Day4() : base(4) {
@@ -62,7 +63,6 @@ namespace AoC2025
         }
         void Part1()
         {
-            const int MaxSurroundingRolls = 4;
             long p1 = 0L;
             /*
             Dictionary<GridLocation, int> counts = [];
@@ -95,7 +95,62 @@ namespace AoC2025
         void Part2()
         {
             long p2 = 0L;
-            // Add implementation here...
+            Dictionary<GridLocation, int> counts = [];
+            foreach (var roll in paperRolls)
+            {
+                counts.Add(roll, GetSurroundingCount(paperRolls, roll.Row, roll.Column, 10));
+            }
+            int removed;
+            do
+            {
+                removed = 0;
+                HashSet<GridLocation> toRemove = [];
+                /*
+                Func<GridLocation, int> RemoveRoll = null;
+                RemoveRoll = (location) => {
+                    if (toRemove.Contains(location)) return 0;
+                    int removeCount = 1;
+                    toRemove.Add(location);
+                    foreach (var neighbour in DirectionalMove)
+                    {
+                        GridLocation nLocation = location + neighbour.Value;
+                        if (toRemove.Contains(nLocation)) continue;
+                        if (counts.TryGetValue(nLocation, out int ncount))
+                        {
+                            if (ncount <= MaxSurroundingRolls)
+                            {
+                                toRemove.Add(nLocation);
+                                removeCount += RemoveRoll(nLocation);
+                            }
+                            else counts[nLocation] = ncount - 1;
+                        }
+                    }
+                    return removeCount;
+                };*/
+                foreach (var roll in counts)
+                {
+                    if (toRemove.Contains(roll.Key)) continue;
+                    if (roll.Value < MaxSurroundingRolls)
+                    {
+                        //removed += RemoveRoll(roll.Key);
+                        ++removed;
+                        toRemove.Add(roll.Key);
+                        foreach (var neighbour in DirectionalMove)
+                        {
+                            GridLocation nLocation = roll.Key + neighbour.Value;
+                            if (counts.TryGetValue(nLocation, out int ncount))
+                            {
+                                counts[nLocation] = ncount - 1;
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine($"Removed {removed} rolls in this pass.");
+                foreach (var roll in toRemove)
+                    counts.Remove(roll);
+                p2 += removed;
+
+            } while (removed > 0);
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
