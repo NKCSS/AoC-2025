@@ -11,7 +11,7 @@ namespace AoC2025
         bool Test = false;
         const int MaxSurroundingRolls = 4;
         const char PaperMarker = '@';
-        const long AnswerP1Test = 13, AnswerP2Test = 43, AnswerP1 = 1569, AnswerP2 = -1L;
+        const long AnswerP1Test = 13, AnswerP2Test = 43, AnswerP1 = 1569, AnswerP2 = 9280;
         HashSet<GridLocation> paperRolls;
         int rowCount, colCount;
         public Day4() : base(4) {
@@ -63,32 +63,7 @@ namespace AoC2025
         }
         void Part1()
         {
-            long p1 = 0L;
-            /*
-            Dictionary<GridLocation, int> counts = [];
-            foreach(var roll in paperRolls)
-            {
-                int count = GetSurroundingCount(paperRolls, roll.Row, roll.Column, MaxSurroundingRolls);
-                counts.Add(roll, count);
-            }
-            for (int row = 0; row < rowCount; ++row)
-            {
-                for (int col = 0; col < colCount; ++col)
-                {
-                    Console.Write(counts.TryGetValue((row,col), out int c) ? (c < MaxSurroundingRolls ? 'X' : '@') : ".");
-                }
-                Console.WriteLine();
-            }*/
-            p1 = paperRolls.Count(roll => GetSurroundingCount(paperRolls, roll.Row, roll.Column, MaxSurroundingRolls) < MaxSurroundingRolls);
-            /*
-            for (int row = 0; row < rowCount; ++row)
-            {
-                for (int col = 0; col < colCount; ++col)
-                {
-
-                }
-            }
-            */
+            long p1 = paperRolls.Count(roll => GetSurroundingCount(paperRolls, roll.Row, roll.Column, MaxSurroundingRolls) < MaxSurroundingRolls);
             Console.WriteLine($"Part 1: {p1}");
             Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
@@ -105,7 +80,7 @@ namespace AoC2025
             {
                 removed = 0;
                 HashSet<GridLocation> toRemove = [];
-                /*
+                
                 Func<GridLocation, int> RemoveRoll = null;
                 RemoveRoll = (location) => {
                     if (toRemove.Contains(location)) return 0;
@@ -119,30 +94,19 @@ namespace AoC2025
                         {
                             if (ncount <= MaxSurroundingRolls)
                             {
-                                toRemove.Add(nLocation);
                                 removeCount += RemoveRoll(nLocation);
                             }
                             else counts[nLocation] = ncount - 1;
                         }
                     }
                     return removeCount;
-                };*/
+                };
                 foreach (var roll in counts)
                 {
                     if (toRemove.Contains(roll.Key)) continue;
                     if (roll.Value < MaxSurroundingRolls)
                     {
-                        //removed += RemoveRoll(roll.Key);
-                        ++removed;
-                        toRemove.Add(roll.Key);
-                        foreach (var neighbour in DirectionalMove)
-                        {
-                            GridLocation nLocation = roll.Key + neighbour.Value;
-                            if (counts.TryGetValue(nLocation, out int ncount))
-                            {
-                                counts[nLocation] = ncount - 1;
-                            }
-                        }
+                        removed += RemoveRoll(roll.Key);
                     }
                 }
                 Console.WriteLine($"Removed {removed} rolls in this pass.");
