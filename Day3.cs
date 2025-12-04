@@ -23,7 +23,6 @@ namespace AoC2025
             Part1();
             Part2();
         }
-        int optimizeCount = 0;
         Max GetLargest(char[] value, int start, int end)
         {
             char biggest = '0';
@@ -36,7 +35,6 @@ namespace AoC2025
                     biggest = value[i];
                     if (biggest == MaxChar)
                     {
-                        ++optimizeCount;
                         break;
                     }
                 }
@@ -81,7 +79,6 @@ namespace AoC2025
                 p2 += localResult;
             }
             Console.WriteLine($"Part 2: {p2}");
-            Console.WriteLine($"Breaked early: {optimizeCount}/{Input.ToLines().Length}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
     }
