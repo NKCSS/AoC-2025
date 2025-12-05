@@ -1,9 +1,10 @@
-﻿using System;
+﻿using BenchmarkDotNet.Attributes;
+using NKCSS.AoC;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
-using NKCSS.AoC;
 namespace AoC2025
 {
     public class Day4 : Solution
@@ -34,9 +35,14 @@ namespace AoC2025
             var rows = Input.ToLines();
             rowCount = rows.Length;
             colCount = rows[0].Length;
-            paperRolls = rows.MapAsGridLocations(PaperMarker)[0];            
+            paperRolls = rows.MapAsGridLocations(PaperMarker)[0];
+            var start = Stopwatch.GetTimestamp();
             Part1();
+            var p1Time = Stopwatch.GetTimestamp();            
             Part2();
+            var p2Time = Stopwatch.GetTimestamp();
+            Console.WriteLine($"P1: {Stopwatch.GetElapsedTime(start, p1Time)}");
+            Console.WriteLine($"P2: {Stopwatch.GetElapsedTime(p1Time, p2Time)}");
         }
         Dictionary<Direction, (int row, int col)> DirectionalMove = new() {
             { Direction.Up, (-1, 0) },
@@ -48,7 +54,9 @@ namespace AoC2025
             { Direction.DownLeft, (1, -1) },
             { Direction.DownRight, (1, 1) },
         };
-
+        /// <summary>
+        /// Version with early-exit via <paramref name="exitAfter"/> />
+        /// </summary>
         int GetSurroundingCount(HashSet<GridLocation> paperRolls, int row, int col, int exitAfter)
         {
             int count = 0;
@@ -57,6 +65,18 @@ namespace AoC2025
                 if (paperRolls.Contains((row + dir.Value.row, col + dir.Value.col)))
                 {
                     if(++count >= exitAfter) return count;
+                }
+            }
+            return count;
+        }
+        int GetSurroundingCount(HashSet<GridLocation> paperRolls, int row, int col)
+        {
+            int count = 0;
+            foreach (var dir in DirectionalMove)
+            {
+                if (paperRolls.Contains((row + dir.Value.row, col + dir.Value.col)))
+                {
+                    ++count;
                 }
             }
             return count;
@@ -73,50 +93,41 @@ namespace AoC2025
             Dictionary<GridLocation, int> counts = [];
             foreach (var roll in paperRolls)
             {
-                counts.Add(roll, GetSurroundingCount(paperRolls, roll.Row, roll.Column, 10));
+                counts.Add(roll, GetSurroundingCount(paperRolls, roll.Row, roll.Column));
             }
-            int removed;
-            do
+            HashSet<GridLocation> removed = [];
+            foreach (var roll in counts)
             {
-                removed = 0;
-                HashSet<GridLocation> toRemove = [];
-                
-                Func<GridLocation, int> RemoveRoll = null;
-                RemoveRoll = (location) => {
-                    if (toRemove.Contains(location)) return 0;
-                    int removeCount = 1;
-                    toRemove.Add(location);
-                    foreach (var neighbour in DirectionalMove)
-                    {
-                        GridLocation nLocation = location + neighbour.Value;
-                        if (toRemove.Contains(nLocation)) continue;
-                        if (counts.TryGetValue(nLocation, out int ncount))
-                        {
-                            if (ncount <= MaxSurroundingRolls)
-                            {
-                                removeCount += RemoveRoll(nLocation);
-                            }
-                            else counts[nLocation] = ncount - 1;
-                        }
-                    }
-                    return removeCount;
-                };
-                foreach (var roll in counts)
+                if (removed.Contains(roll.Key)) continue;
+                if (roll.Value < MaxSurroundingRolls)
                 {
-                    if (toRemove.Contains(roll.Key)) continue;
-                    if (roll.Value < MaxSurroundingRolls)
-                    {
-                        removed += RemoveRoll(roll.Key);
-                    }
+                    p2 += RemoveRoll(roll.Key);
                 }
-                Console.WriteLine($"Removed {removed} rolls in this pass.");
-                foreach (var roll in toRemove)
-                    counts.Remove(roll);
-                p2 += removed;
-
-            } while (removed > 0);
+            }
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
+
+
+            int RemoveRoll(GridLocation location)
+            {
+                if (removed.Contains(location)) return 0;
+                int removeCount = 1;
+                removed.Add(location);
+                foreach (var neighbour in DirectionalMove)
+                {
+                    GridLocation nLocation = location + neighbour.Value;
+                    if (removed.Contains(nLocation)) continue;
+                    if (counts.TryGetValue(nLocation, out int ncount))
+                    {
+                        if (ncount <= MaxSurroundingRolls)
+                        {
+                            removeCount += RemoveRoll(nLocation);
+                        }
+                        else counts[nLocation] = ncount - 1;
+                    }
+                }
+                return removeCount;
+            };
         }
     }
 }

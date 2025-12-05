@@ -8,7 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\advent-of-code-2020\NKCSS.AoC\NKCSS.AoC.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="session.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
