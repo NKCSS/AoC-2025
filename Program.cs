@@ -1,2 +1,2 @@
 ﻿using AoC2025;
-new Day5();
+new Day6();
