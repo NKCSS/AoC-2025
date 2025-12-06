@@ -1,4 +1,5 @@
-﻿using NKCSS.AoC;
+﻿using BenchmarkDotNet.Attributes;
+using NKCSS.AoC;
 using System.Diagnostics;
 
 namespace AoC2025
@@ -81,5 +82,11 @@ namespace AoC2025
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
+        #region For Benchmark.NET
+        [Benchmark]
+        public void Day3_Part1() => Part1();
+        [Benchmark]
+        public void Day3_Part2() => Part2();
+        #endregion
     }
 }

@@ -36,13 +36,8 @@ namespace AoC2025
             rowCount = rows.Length;
             colCount = rows[0].Length;
             paperRolls = rows.MapAsGridLocations(PaperMarker)[0];
-            var start = Stopwatch.GetTimestamp();
             Part1();
-            var p1Time = Stopwatch.GetTimestamp();            
             Part2();
-            var p2Time = Stopwatch.GetTimestamp();
-            Console.WriteLine($"P1: {Stopwatch.GetElapsedTime(start, p1Time)}");
-            Console.WriteLine($"P2: {Stopwatch.GetElapsedTime(p1Time, p2Time)}");
         }
         Dictionary<Direction, (int row, int col)> DirectionalMove = new() {
             { Direction.Up, (-1, 0) },
@@ -129,5 +124,11 @@ namespace AoC2025
                 return removeCount;
             };
         }
+        #region For Benchmark.NET
+        [Benchmark]
+        public void Day4_Part1() => Part1();
+        [Benchmark]
+        public void Day4_Part2() => Part2();
+        #endregion
     }
 }
