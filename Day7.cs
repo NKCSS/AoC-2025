@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NKCSS.AoC;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace AoC2025
 {
@@ -62,7 +63,7 @@ namespace AoC2025
                 beam = beams.Dequeue();
                 do
                 {
-                    beam = beam.Down();
+                    beam = beam.Down().Down();
                     if (splitterLocations.Contains(beam))
                     {
                         if (!hitlocations.Contains(beam))
@@ -119,99 +120,56 @@ namespace AoC2025
         void Part2()
         {
             long p2 = 0L;
-            Queue<GridLocation> beams = [];
-            beams.Enqueue(startLocation);
-            Dictionary<GridLocation, HashSet<GridLocation>> uniqueConstraint = [];
-            uniqueConstraint.Add(startLocation, [startLocation]);
+            Console.WriteLine($"Part 2: {p2}");
+            // Find all the unique ways to get to the bottom.
+            // Record connections between splitters (e.g. branches)
+            HashSet<GridLocation> uniqueConstraint = [startLocation];
             GridLocation beam;
             newBeams = [];
+            Queue<(GridLocation current, List<GridLocation> path)> q = [];
             List<GridLocation> hitlocations = [];
-            while (beams.Count > 0)
+            (GridLocation pos, List<GridLocation> path) current;
+            q.Enqueue((startLocation, [startLocation]));
+            HashSet<string> uniquePaths = [];
+            int c = 0;
+            while (q.Count > 0)
             {
-                beam = beams.Dequeue();
+                current = q.Dequeue();
+                beam = current.pos;
                 do
                 {
                     beam = beam.Down();
                     if (splitterLocations.Contains(beam))
                     {
-                        if (!hitlocations.Contains(beam))
+                        string path = string.Join("|", [.. current.path, beam]);
+                        if (!uniquePaths.Contains(path))
                         {
-                            hitlocations.Add(beam);
+                            uniquePaths.Add(path);
                             GridLocation left = beam.Left(), right = beam.Right();
                             if (left.Column >= 0)
                             {
-                                if (uniqueConstraint.TryGetValue(left, out var paths))
-                                {
-                                    paths.Add(beam);
-                                }
-                                else
-                                {
-                                    beams.Enqueue(left);
-                                    uniqueConstraint.Add(left, [beam]);
-                                    newBeams.Add(left);
-                                }
+                                q.Enqueue((left, [.. current.path, beam]));
+                                newBeams.Add(left);
                             }
                             if (right.Column < MaxCol)
                             {
-                                if (uniqueConstraint.TryGetValue(right, out var paths))
-                                {
-                                    paths.Add(beam);
-                                }
-                                else
-                                {
-                                    beams.Enqueue(right);
-                                    uniqueConstraint.Add(right, [beam]);
-                                    newBeams.Add(right);
-                                }
+                                q.Enqueue((right, [.. current.path, beam]));
+                                newBeams.Add(right);
                             }
                         }
                         break;
                     }
                 }
                 while (beam.Row < MaxRows);
-            }
-            var frequency = hitlocations.GroupBy(x => x).ToDictionary(x => x.Key, x => x.Count());
-            GridLocation current;
-            char m;
-            for (int row = 0; row < MaxRows; ++row)
-            {
-                for (int col = 0; col < MaxCol; ++col)
+                if (beam.Row == MaxRows)
                 {
-                    current = (row, col);
-                    if (frequency.TryGetValue(current, out int hits))
-                    {
-                        if (hits == 1) Console.ForegroundColor = ConsoleColor.Green;
-                        else Console.ForegroundColor = ConsoleColor.Red;
-                    }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                    }
-                    if (current == startLocation) m = StartMarker;
-                    else if (splitterLocations.Contains(current)) m = SplitterMarker;
-                    //else if (newBeams.Contains(current)) m = '|';
-                    else if (uniqueConstraint.TryGetValue(current, out var ways)) m = RecursiveCount(current).ToString()[0];
-                    else m = '.';
-                    Console.Write(m);
+                    // Reached the bottom
+                    ++c;
+                    //Console.WriteLine($"Path to the end: {string.Join("->", current.path)}");
                 }
-                Console.WriteLine();
             }
-            Console.WriteLine($"Part 2: {p2}");
+            Console.WriteLine($"Printed {c} paths...");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
-
-            int RecursiveCount(GridLocation loc)
-            {
-                int result = 0;
-                if (uniqueConstraint.TryGetValue(loc, out var ways))
-                {
-                    result += ways.Count;
-                    foreach(var way in ways)
-                    {
-                        result += RecursiveCount(way);
-                    }
-                }
-                return result;
-            }
         }
         #region For Benchmark.NET
         [Benchmark]
