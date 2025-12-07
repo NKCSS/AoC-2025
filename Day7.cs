@@ -1,7 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Microsoft.Diagnostics.Tracing.Parsers.ClrPrivate;
+using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using Microsoft.Extensions.Logging;
 using NKCSS.AoC;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -11,8 +13,8 @@ namespace AoC2025
     public class Day7 : Solution
     {
         const char StartMarker = 'S', SplitterMarker = '^';
-        bool Test = true;
-        const long AnswerP1Test = 21, AnswerP2Test = 40, AnswerP1 = 1656, AnswerP2 = -1L;
+        bool Test = false;
+        const long AnswerP1Test = 21, AnswerP2Test = 40, AnswerP1 = 1656, AnswerP2 = 76624086587804;
         GridLocation startLocation;
         HashSet<GridLocation> splitterLocations;
         int MaxRows, MaxCol;
@@ -117,58 +119,25 @@ namespace AoC2025
             Console.WriteLine($"Part 1: {p1}");
             Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
+        // C# version of https://github.com/cheeze2000/aoc/tree/main/2025/07
+        Dictionary<GridLocation, long> cache = [];
+        long GetValue(GridLocation pos)
+        {
+            long result;
+            if (!cache.TryGetValue(pos, out result))
+            {
+                if (pos.Row > MaxRows) result = 1L;
+                else if (splitterLocations.Contains(pos)) result = GetValue(pos.Left()) + GetValue(pos.Right());
+                else result = GetValue(pos.Down().Down());
+                cache.Add(pos, result);
+            }
+            return result;
+        }
         void Part2()
         {
             long p2 = 0L;
+            p2 = GetValue(startLocation);
             Console.WriteLine($"Part 2: {p2}");
-            // Find all the unique ways to get to the bottom.
-            // Record connections between splitters (e.g. branches)
-            HashSet<GridLocation> uniqueConstraint = [startLocation];
-            GridLocation beam;
-            newBeams = [];
-            Queue<(GridLocation current, List<GridLocation> path)> q = [];
-            List<GridLocation> hitlocations = [];
-            (GridLocation pos, List<GridLocation> path) current;
-            q.Enqueue((startLocation, [startLocation]));
-            HashSet<string> uniquePaths = [];
-            int c = 0;
-            while (q.Count > 0)
-            {
-                current = q.Dequeue();
-                beam = current.pos;
-                do
-                {
-                    beam = beam.Down();
-                    if (splitterLocations.Contains(beam))
-                    {
-                        string path = string.Join("|", [.. current.path, beam]);
-                        if (!uniquePaths.Contains(path))
-                        {
-                            uniquePaths.Add(path);
-                            GridLocation left = beam.Left(), right = beam.Right();
-                            if (left.Column >= 0)
-                            {
-                                q.Enqueue((left, [.. current.path, beam]));
-                                newBeams.Add(left);
-                            }
-                            if (right.Column < MaxCol)
-                            {
-                                q.Enqueue((right, [.. current.path, beam]));
-                                newBeams.Add(right);
-                            }
-                        }
-                        break;
-                    }
-                }
-                while (beam.Row < MaxRows);
-                if (beam.Row == MaxRows)
-                {
-                    // Reached the bottom
-                    ++c;
-                    //Console.WriteLine($"Path to the end: {string.Join("->", current.path)}");
-                }
-            }
-            Console.WriteLine($"Printed {c} paths...");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
         #region For Benchmark.NET
