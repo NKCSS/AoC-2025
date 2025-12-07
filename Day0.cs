@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BenchmarkDotNet.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -14,7 +15,9 @@ namespace AoC2025
             if (Test)
             {
                 // Paste test input here...
-                Input = @"";
+                Input = """
+
+                    """;
             }
             Part1();
             Part2();
@@ -33,5 +36,11 @@ namespace AoC2025
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
+        #region For Benchmark.NET
+        [Benchmark]
+        public void Day0_Part1() => Part1();
+        [Benchmark]
+        public void Day0_Part2() => Part2();
+        #endregion
     }
 }
