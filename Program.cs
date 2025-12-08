@@ -1,2 +1,4 @@
 ﻿using AoC2025;
-new Day7();
+using System.Text;
+Console.OutputEncoding = Encoding.UTF8;
+new Day8();
