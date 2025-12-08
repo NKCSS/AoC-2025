@@ -10,10 +10,10 @@ namespace AoC2025
 {
     public class Day8 : Solution
     {
-        const bool Test = true;
+        const bool Test = false;
         const int NumToProcessTest = 10, NumToProcessReal = 1000, NumToProcess = Test ? NumToProcessTest : NumToProcessReal;
         const int BiggestGroupsToCount = 3;
-        const long AnswerP1Test = 40, AnswerP2Test = 25272, AnswerP1 = 171503, AnswerP2 = -1L;
+        const long AnswerP1Test = 40, AnswerP2Test = 25272, AnswerP1 = 171503, AnswerP2 = 9069509600;
         List<Location3D> locations;
         List<(Location3D a, Location3D b, double distance)> uniquePairs = [];
         public Day8() : base(8) {
@@ -87,7 +87,7 @@ namespace AoC2025
             foreach(var entry in toProcess)//uniquePairs)
             {
                 ++pairsProcessed;
-                Console.WriteLine($"{entry.a} -> {entry.b} = {entry.distance:F2}");
+                //Console.WriteLine($"{entry.a} -> {entry.b} = {entry.distance:F2}");
                 if (groupIdLookup.TryGetValue(entry.a, out groupId))
                 {
                     // make sure to only link when not already part of a group
@@ -135,7 +135,83 @@ namespace AoC2025
         void Part2()
         {
             long p2 = 0L;
-            
+            List<(Location3D a, Location3D b, double distance)> toProcess = [.. uniquePairs.Take(NumToProcess)];
+            Dictionary<Location3D, int> groupIdLookup = [];
+            Dictionary<int, HashSet<Location3D>> groups = [];
+            int groupId, otherGroupId, nonEmptyGroupCount;
+            //foreach (var entry in toProcess)
+
+            void mergeGroups(int groupId, int otherGroupId)
+            {
+                // merge groups when it's not the same group, otherwise, NOOP.
+                if (groupId == otherGroupId) return;
+                var groupA = groups[groupId];
+                var groupB = groups[otherGroupId];
+                bool aBigger = groupA.Count > groupB.Count;
+                int biggestGroupId = aBigger ? groupId : otherGroupId;
+                int smallestGroupId = aBigger ? otherGroupId : groupId;
+                var from = aBigger ? groupB : groupA;
+                var to = aBigger ? groupA : groupB;
+                Console.Write($"Merging {from.Count} entries from group {smallestGroupId} into group {biggestGroupId} which has {to.Count} entries");
+                foreach (var p in from)
+                {
+                    groupIdLookup[p] = biggestGroupId;
+                }
+                to.UnionWith(from);
+                from.Clear();
+                Console.WriteLine($" ({to.Count} afer the merge).");
+            }
+
+            int pairsProcessed = 0;
+            foreach (var entry in uniquePairs)
+            {
+                ++pairsProcessed;
+                //Console.WriteLine($"{entry.a} -> {entry.b} = {entry.distance:F2}");
+                if (groupIdLookup.TryGetValue(entry.a, out groupId))
+                {
+                    // make sure to only link when not already part of a group
+                    if (groupIdLookup.TryGetValue(entry.b, out otherGroupId))
+                    {
+                        mergeGroups(groupId, otherGroupId);
+                    }
+                    else
+                    {
+                        // add b to a's group if it's not already part
+                        groupIdLookup.Add(entry.b, groupId);
+                        groups[groupId].Add(entry.b);
+                    }
+                }
+                else if (groupIdLookup.TryGetValue(entry.b, out groupId))
+                {
+                    // make sure to only link when not already part of a group
+                    if (groupIdLookup.TryGetValue(entry.a, out otherGroupId))
+                    {
+                        mergeGroups(groupId, otherGroupId);
+                    }
+                    else
+                    {
+                        // add a to b's group
+                        groupIdLookup.Add(entry.a, groupId);
+                        groups[groupId].Add(entry.a);
+                    }
+                }
+                else
+                {
+                    groupId = groups.Count;
+                    groups.Add(groupId, [entry.a, entry.b]);
+                    groupIdLookup.Add(entry.a, groupId);
+                    groupIdLookup.Add(entry.b, groupId);
+                }
+                long sum = groups.OrderByDescending(x => x.Value.Count).Take(BiggestGroupsToCount).Aggregate(1L, (toAdd, current) => Math.Max(1L, (long)current.Value.Count) * toAdd);
+                //Console.WriteLine($"After processing {pairsProcessed} pairs ({groupIdLookup.Count} unique locations, {groups.Count} groups formed so far): {sum}");
+                if (sum == 0) Debugger.Break();
+                if (groupIdLookup.Count == locations.Count)
+                {
+                    Console.WriteLine($"last node connected. {entry.a} <-> {entry.b}");
+                    p2 = (long)entry.a.x * (long)entry.b.x;
+                    break;
+                }
+            }
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
