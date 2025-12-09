@@ -1,24 +1,25 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using AoC2025;
+using BenchmarkDotNet.Attributes;
+using Microsoft.Diagnostics.Runtime;
+using NKCSS.AoC;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
-using AoC2025;
-using NKCSS.AoC;
 using System.Drawing;
-using Microsoft.Diagnostics.Runtime;
+using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 namespace AoC2025
 {
     public class Day9 : Solution
     {
         const char RedTileMarker = '#';
-        bool Test = false;
-        const long AnswerP1Test = 50, AnswerP2Test = 24, AnswerP1 = 4749838800, AnswerP2 = -1L;
+        const bool Test = false, SaveImage = false;
+        const long AnswerP1Test = 50L, AnswerP2Test = 24L, AnswerP1 = 4749838800L, AnswerP2 = 1624057680L;
         List<GridLocation> redTiles;
-        List<(GridLocation a, GridLocation b, ulong surface)> uniqueCombos;
+        List<(GridLocation a, GridLocation b, long surface)> uniqueCombos;
         List<(GridLocation a, GridLocation b)> lineSegments;
         public Day9() : base(9) {
             if (Test)
@@ -44,228 +45,165 @@ namespace AoC2025
         }
         void Part1()
         {
-            ulong p1 = 0L;
+            long p1 = 0L;
             p1 = uniqueCombos.First().surface;
             Console.WriteLine($"Part 1: {p1}");
-            Debug.Assert(p1 == (ulong)(Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
+            Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
-        void Part2()
+        Bitmap Visualize((GridLocation topLeft, GridLocation bottomRight) square, bool printDebug = false, int imageSize = 1000)
         {
-            ulong p2 = 0L;
-            // Add implementation here...
-            const bool visualize = false;
-            if (visualize)
+            int row, col, from, to;
+            if (printDebug) Console.WriteLine($"Area: {square.topLeft}->{square.bottomRight}");
+            bool match = true;
+            float scale = (float)imageSize / redTiles.Max(x => Math.Max(x.Row, x.Column));
+            Bitmap bmp = new Bitmap(imageSize, imageSize);
+            using (Graphics gfx = Graphics.FromImage(bmp))
             {
-                const int ImgSize = 1000;
-                float scale = (float)ImgSize / redTiles.Max(x => Math.Max(x.Row, x.Column));
-                using (Bitmap bmp = new Bitmap(ImgSize, ImgSize))
-                {
-                    using (Graphics gfx = Graphics.FromImage(bmp))
-                    {
-                        gfx.FillRectangle(Brushes.White, new Rectangle(0, 0, ImgSize, ImgSize));
-                        foreach (var segment in lineSegments)
-                        {
-                            gfx.DrawLine(Pens.Black, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                        }
-                        gfx.Flush();
-                        gfx.Save();
-                    }
-                    bmp.Save("area.png", System.Drawing.Imaging.ImageFormat.Png);
-                }
-            }
-            int areaId = 0;
-            foreach(var candidate in uniqueCombos)
-            {
-                // check if it intersects with any lines, if it does, scrap it.
-                var square = candidate.a.Square(candidate.b);
-                bool match = true;
-                int row, col, from, to;
-                if (Test) Console.WriteLine($"Area: {square.topLeft}->{square.bottomRight}");
-                
-                const int ImgSize = 1000;
-                float scale = (float)ImgSize / redTiles.Max(x => Math.Max(x.Row, x.Column));
-                using (Bitmap bmp = new Bitmap(ImgSize, ImgSize))
-                {
-                    using (Graphics gfx = Graphics.FromImage(bmp))
-                    {
-                        gfx.FillRectangle(Brushes.White, new Rectangle(0, 0, ImgSize, ImgSize));
-                        gfx.FillRectangle(Brushes.Black, new RectangleF(square.topLeft.Column * scale, square.topLeft.Row * scale, (square.bottomRight.Column - square.topLeft.Column) * scale, (square.bottomRight.Row - square.topLeft.Row) * scale));
-                        foreach (var segment in lineSegments)
-                        {
-                            row = segment.a.Row;
-                            col = segment.a.Column;
-                            if (row == segment.b.Row)
-                            {
-                                from = Math.Min(col, segment.b.Column);
-                                to = Math.Max(col, segment.b.Column);
-                                if (Test) Console.Write($"Line on row {row} from col {segment.a.Column} to {segment.b.Column}...");
-                                // horizontal
-                                if (row <= square.topLeft.Row || row >= square.bottomRight.Row)
-                                {
-                                    // does not intersect
-                                    if (Test) Console.WriteLine($"does not intersect!");
-                                    gfx.DrawLine(Pens.Green, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                }
-                                else
-                                {
-                                    // check col.
-                                    if (
-                                        square.topLeft.Column < to
-                                        && 
-                                        square.bottomRight.Column > from
-                                        /*
-                                        (col > square.topLeft.Column && col < square.bottomRight.Column)
-                                        ||
-                                        (col >= square.topLeft.Column && col < square.bottomRight.Column)
-                                        ||
-                                        (col > square.topLeft.Column && col <= square.bottomRight.Column)
-                                        ||
-                                        (segment.b.Column > square.topLeft.Column && segment.b.Column < square.bottomRight.Column)
-                                        ||
-                                        (segment.b.Column >= square.topLeft.Column && segment.b.Column < square.bottomRight.Column)
-                                        ||
-                                        (segment.b.Column > square.topLeft.Column && segment.b.Column <= square.bottomRight.Column)
-                                        ||
-                                        (segment.b.Column > square.topLeft.Column && segment.b.Column <= square.bottomRight.Column)
-                                        */
-                                    )
-                                    {
-                                        if (Test) Console.WriteLine($"intersects!");
-                                        // intersects with our shape!
-                                        gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                        match = false;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        if (Test) Console.WriteLine($"On same row, not column!");
-                                        gfx.DrawLine(Pens.Blue, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                    }
-                                }
-                            }
-                            // vertical (e.g. column == column)
-                            else
-                            {
-                                from = Math.Min(row, segment.b.Row);
-                                to = Math.Max(row, segment.b.Row);
-                                if (Test) Console.Write($"Line on column {col} from row {segment.a.Row} to {segment.b.Row}...");
-                                if (col <= square.topLeft.Column || col >= square.bottomRight.Column)
-                                {
-                                    // does not intersect
-                                    if (Test) Console.WriteLine($"does not intersect!");
-                                    gfx.DrawLine(Pens.Green, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                }
-                                else
-                                {
-                                    // check rows.
-                                    if (
-                                        /*
-                                        (row > square.topLeft.Row && row < square.bottomRight.Row)
-                                        ||
-                                        (row >= square.topLeft.Row && row < square.bottomRight.Row)
-                                        ||
-                                        (row > square.topLeft.Row && row <= square.bottomRight.Row)
-                                        ||
-                                        (segment.b.Row > square.topLeft.Row && segment.b.Row < square.bottomRight.Row)
-                                        */
-                                        square.topLeft.Column < to
-                                        &&
-                                        square.bottomRight.Column > from
-                                    )
-                                    {
-                                        // intersects with our shape!
-                                        if (Test) Console.WriteLine($"intersects!");
-                                        gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                        match = false;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        if(Test) Console.WriteLine($"On same col, not row!");
-                                        gfx.DrawLine(Pens.Blue, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                    }
-                                }
-                            }
-                        }
-                        gfx.Flush();
-                    }
-                    ++areaId;
-                    if (match)
-                    {
-                        if (p2 == 0) p2 = candidate.surface;
-                        if (!Test) bmp.Save($"real_{(areaId).ToString().PadLeft(5, '0')}.png", System.Drawing.Imaging.ImageFormat.Png);
-                        break;
-                    }
-                    if (Test) bmp.Save($"testv2_{(areaId).ToString().PadLeft(5, '0')}.png", System.Drawing.Imaging.ImageFormat.Png);
-                }
-                /*
+                gfx.FillRectangle(Brushes.White, new Rectangle(0, 0, imageSize, imageSize));
+                gfx.FillRectangle(Brushes.Black, new RectangleF(square.topLeft.Column * scale, square.topLeft.Row * scale, (square.bottomRight.Column - square.topLeft.Column) * scale, (square.bottomRight.Row - square.topLeft.Row) * scale));
                 foreach (var segment in lineSegments)
                 {
                     row = segment.a.Row;
                     col = segment.a.Column;
                     if (row == segment.b.Row)
                     {
-                        if (Test) Console.Write($"Line on row {row} from col {segment.a.Column} to {segment.b.Column}...");
+                        from = Math.Min(col, segment.b.Column);
+                        to = Math.Max(col, segment.b.Column);
+                        if (printDebug) Console.Write($"Line on row {row} from col {segment.a.Column} to {segment.b.Column}...");
                         // horizontal
                         if (row <= square.topLeft.Row || row >= square.bottomRight.Row)
                         {
                             // does not intersect
-                            if (Test) Console.WriteLine($"does not intersect!");
+                            if (printDebug) Console.WriteLine($"does not intersect!");
+                            gfx.DrawLine(Pens.Green, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                         }
                         else
                         {
                             // check col.
                             if (
-                                (col > square.topLeft.Column && col < square.bottomRight.Column)
-                                ||
-                                (col >= square.topLeft.Column && col < square.bottomRight.Column)
-                                ||
-                                (col > square.topLeft.Column && col <= square.bottomRight.Column)
-                                ||
-                                (segment.b.Column > square.topLeft.Column && segment.b.Column < square.bottomRight.Column)
+                                square.topLeft.Column < to
+                                &&
+                                square.bottomRight.Column > from
                             )
                             {
-                                if (Test) Console.WriteLine($"intersects!");
+                                if (printDebug) Console.WriteLine($"intersects!");
                                 // intersects with our shape!
+                                gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                 match = false;
                                 break;
                             }
                             else
                             {
-                                if (Test) Console.WriteLine($"On same row, not column!");
+                                if (printDebug) Console.WriteLine($"On same row, not column!");
+                                gfx.DrawLine(Pens.Blue, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                             }
                         }
                     }
                     // vertical (e.g. column == column)
                     else
                     {
+                        from = Math.Min(row, segment.b.Row);
+                        to = Math.Max(row, segment.b.Row);
                         if (Test) Console.Write($"Line on column {col} from row {segment.a.Row} to {segment.b.Row}...");
                         if (col <= square.topLeft.Column || col >= square.bottomRight.Column)
                         {
                             // does not intersect
                             if (Test) Console.WriteLine($"does not intersect!");
+                            gfx.DrawLine(Pens.Green, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                         }
                         else
                         {
                             // check rows.
                             if (
-                                (row > square.topLeft.Row && row < square.bottomRight.Row)
-                                ||
-                                (row >= square.topLeft.Row && row < square.bottomRight.Row)
-                                ||
-                                (row > square.topLeft.Row && row <= square.bottomRight.Row)
-                                ||
-                                (segment.b.Row > square.topLeft.Row && segment.b.Row < square.bottomRight.Row)
+                                square.topLeft.Column < to
+                                &&
+                                square.bottomRight.Column > from
                             )
                             {
                                 // intersects with our shape!
                                 if (Test) Console.WriteLine($"intersects!");
+                                gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                 match = false;
                                 break;
                             }
                             else
                             {
-                                if (Test) Console.WriteLine($"On same col, not now!");
+                                if (Test) Console.WriteLine($"On same col, not row!");
+                                gfx.DrawLine(Pens.Blue, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
+                            }
+                        }
+                    }
+                }
+                gfx.Flush();
+            }
+            return bmp;
+        }
+        void Part2()
+        {
+            long p2 = 0L;
+            foreach(var candidate in uniqueCombos)
+            {
+                // check if it intersects with any lines, if it does, scrap it.
+                var square = candidate.a.Square(candidate.b);
+                bool match = true;
+                int row, col, from, to;
+                foreach (var segment in lineSegments)
+                {
+                    row = segment.a.Row;
+                    col = segment.a.Column;
+                    if (row == segment.b.Row)
+                    {
+                        from = Math.Min(col, segment.b.Column);
+                        to = Math.Max(col, segment.b.Column);
+                        // horizontal
+                        if (row <= square.topLeft.Row || row >= square.bottomRight.Row)
+                        {
+                            // does not intersect
+                        }
+                        else
+                        {
+                            // check col.
+                            if (
+                                square.topLeft.Column < to
+                                &&
+                                square.bottomRight.Column > from
+                            )
+                            {
+                                // intersects with our shape!
+                                match = false;
+                                break;
+                            }
+                            else
+                            {
+                                // no intersection
+                            }
+                        }
+                    }
+                    // vertical (e.g. column == column)
+                    else
+                    {
+                        from = Math.Min(row, segment.b.Row);
+                        to = Math.Max(row, segment.b.Row);
+                        if (col <= square.topLeft.Column || col >= square.bottomRight.Column)
+                        {
+                            // does not intersect
+                        }
+                        else
+                        {
+                            // check rows.
+                            if (
+                                square.topLeft.Column < to
+                                &&
+                                square.bottomRight.Column > from
+                            )
+                            {
+                                // intersects with our shape!
+                                match = false;
+                                break;
+                            }
+                            else
+                            {
+                                // does not intersect
                             }
                         }
                     }
@@ -273,12 +211,12 @@ namespace AoC2025
                 if (match)
                 {
                     p2 = candidate.surface;
+                    if (SaveImage) Visualize(square, printDebug: false, imageSize: 1000).Save("part2.png", System.Drawing.Imaging.ImageFormat.Png);
                     break;
                 }
-                */
             }
             Console.WriteLine($"Part 2: {p2}");
-            Debug.Assert(p2 == (ulong)(Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
+            Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
         #region For Benchmark.NET
         [Benchmark]
