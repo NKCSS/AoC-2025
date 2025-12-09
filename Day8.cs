@@ -73,14 +73,14 @@ namespace AoC2025
                 int smallestGroupId = aBigger ? otherGroupId : groupId;
                 var from = aBigger ? groupB : groupA;
                 var to = aBigger ? groupA : groupB;
-                Console.Write($"Merging {from.Count} entries from group {smallestGroupId} into group {biggestGroupId} which has {to.Count} entries");
+                //Console.Write($"Merging {from.Count} entries from group {smallestGroupId} into group {biggestGroupId} which has {to.Count} entries");
                 foreach (var p in from)
                 {
                     groupIdLookup[p] = biggestGroupId;
                 }
                 to.UnionWith(from);
                 from.Clear();
-                Console.WriteLine($" ({to.Count} afer the merge).");
+                //Console.WriteLine($" ({to.Count} afer the merge).");
             }
 
             int pairsProcessed = 0;
@@ -124,7 +124,7 @@ namespace AoC2025
                     groupIdLookup.Add(entry.b, groupId);
                 }
                 long sum = groups.OrderByDescending(x => x.Value.Count).Take(BiggestGroupsToCount).Aggregate(1L, (toAdd, current) => Math.Max(1L, (long)current.Value.Count) * toAdd);
-                Console.WriteLine($"After processing {pairsProcessed} pairs ({groupIdLookup.Count} unique locations, {groups.Count} groups formed so far): {sum}");
+                //Console.WriteLine($"After processing {pairsProcessed} pairs ({groupIdLookup.Count} unique locations, {groups.Count} groups formed so far): {sum}");
                 if (sum == 0) Debugger.Break();
             }
             p1 = groups.OrderByDescending(x => x.Value.Count).Take(BiggestGroupsToCount)
@@ -152,14 +152,14 @@ namespace AoC2025
                 int smallestGroupId = aBigger ? otherGroupId : groupId;
                 var from = aBigger ? groupB : groupA;
                 var to = aBigger ? groupA : groupB;
-                Console.Write($"Merging {from.Count} entries from group {smallestGroupId} into group {biggestGroupId} which has {to.Count} entries");
+                //Console.Write($"Merging {from.Count} entries from group {smallestGroupId} into group {biggestGroupId} which has {to.Count} entries");
                 foreach (var p in from)
                 {
                     groupIdLookup[p] = biggestGroupId;
                 }
                 to.UnionWith(from);
                 from.Clear();
-                Console.WriteLine($" ({to.Count} afer the merge).");
+                //Console.WriteLine($" ({to.Count} afer the merge).");
             }
 
             int pairsProcessed = 0;
@@ -202,12 +202,9 @@ namespace AoC2025
                     groupIdLookup.Add(entry.a, groupId);
                     groupIdLookup.Add(entry.b, groupId);
                 }
-                long sum = groups.OrderByDescending(x => x.Value.Count).Take(BiggestGroupsToCount).Aggregate(1L, (toAdd, current) => Math.Max(1L, (long)current.Value.Count) * toAdd);
-                //Console.WriteLine($"After processing {pairsProcessed} pairs ({groupIdLookup.Count} unique locations, {groups.Count} groups formed so far): {sum}");
-                if (sum == 0) Debugger.Break();
                 if (groupIdLookup.Count == locations.Count)
                 {
-                    Console.WriteLine($"last node connected. {entry.a} <-> {entry.b}");
+                    //Console.WriteLine($"last node connected. {entry.a} <-> {entry.b}");
                     p2 = (long)entry.a.x * (long)entry.b.x;
                     break;
                 }
