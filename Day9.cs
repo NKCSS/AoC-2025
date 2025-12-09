@@ -98,12 +98,12 @@ namespace AoC2025
                             {
                                 from = Math.Min(col, segment.b.Column);
                                 to = Math.Max(col, segment.b.Column);
-                                Console.Write($"Line on row {row} from col {segment.a.Column} to {segment.b.Column}...");
+                                if (Test) Console.Write($"Line on row {row} from col {segment.a.Column} to {segment.b.Column}...");
                                 // horizontal
                                 if (row <= square.topLeft.Row || row >= square.bottomRight.Row)
                                 {
                                     // does not intersect
-                                    Console.WriteLine($"does not intersect!");
+                                    if (Test) Console.WriteLine($"does not intersect!");
                                     gfx.DrawLine(Pens.Green, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                 }
                                 else
@@ -130,7 +130,7 @@ namespace AoC2025
                                         */
                                     )
                                     {
-                                        Console.WriteLine($"intersects!");
+                                        if (Test) Console.WriteLine($"intersects!");
                                         // intersects with our shape!
                                         gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                         match = false;
@@ -138,7 +138,7 @@ namespace AoC2025
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"On same row, not column!");
+                                        if (Test) Console.WriteLine($"On same row, not column!");
                                         gfx.DrawLine(Pens.Blue, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                     }
                                 }
@@ -148,11 +148,11 @@ namespace AoC2025
                             {
                                 from = Math.Min(row, segment.b.Row);
                                 to = Math.Max(row, segment.b.Row);
-                                Console.Write($"Line on column {col} from row {segment.a.Row} to {segment.b.Row}...");
+                                if (Test) Console.Write($"Line on column {col} from row {segment.a.Row} to {segment.b.Row}...");
                                 if (col <= square.topLeft.Column || col >= square.bottomRight.Column)
                                 {
                                     // does not intersect
-                                    Console.WriteLine($"does not intersect!");
+                                    if (Test) Console.WriteLine($"does not intersect!");
                                     gfx.DrawLine(Pens.Green, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                 }
                                 else
@@ -174,14 +174,14 @@ namespace AoC2025
                                     )
                                     {
                                         // intersects with our shape!
-                                        Console.WriteLine($"intersects!");
+                                        if (Test) Console.WriteLine($"intersects!");
                                         gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                         match = false;
                                         break;
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"On same col, not row!");
+                                        if(Test) Console.WriteLine($"On same col, not row!");
                                         gfx.DrawLine(Pens.Blue, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                     }
                                 }
