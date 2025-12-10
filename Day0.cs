@@ -19,8 +19,12 @@ namespace AoC2025
 
                     """;
             }
+            PrepareInput();
             Part1();
             Part2();
+        }
+        void PrepareInput()
+        {
         }
         void Part1()
         {
