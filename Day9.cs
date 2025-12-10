@@ -36,12 +36,16 @@ namespace AoC2025
                     7,3
                     """;
             }
-            redTiles = [.. Input.ToLines().Select(x => x.Split(',').AsInt32s().AsValueTuple()).Select(x => new GridLocation(x.Item1, x.Item2))];
-            uniqueCombos = [..redTiles.GetPermutations(2, allowDupe: false).Select(x => x.AsValueTuple()).Select(x => (x.Item1, x.Item2, x.Item1.Surface(x.Item2))).OrderByDescending(x => x.Item3)];
-            lineSegments = [.. redTiles.Zip(redTiles.Skip(1))];
-            lineSegments.Add((redTiles.Last(), redTiles.First()));
+            PrepareInput();
             Part1();
             Part2();
+        }
+        void PrepareInput()
+        {
+            redTiles = [.. Input.ToLines().Select(x => x.Split(',').AsInt32s().AsValueTuple()).Select(x => new GridLocation(x.Item1, x.Item2))];
+            uniqueCombos = [.. redTiles.GetPermutations(2, allowDupe: false).Select(x => x.AsValueTuple()).Select(x => (x.Item1, x.Item2, x.Item1.Surface(x.Item2))).OrderByDescending(x => x.Item3)];
+            lineSegments = [.. redTiles.Zip(redTiles.Skip(1))];
+            lineSegments.Add((redTiles.Last(), redTiles.First()));
         }
         void Part1()
         {
@@ -219,6 +223,8 @@ namespace AoC2025
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
         #region For Benchmark.NET
+        [Benchmark]
+        public void Day9_PrepareInput() => Part1();
         [Benchmark]
         public void Day9_Part1() => Part1();
         [Benchmark]
