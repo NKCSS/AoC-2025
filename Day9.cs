@@ -20,7 +20,8 @@ namespace AoC2025
         const long AnswerP1Test = 50L, AnswerP2Test = 24L, AnswerP1 = 4749838800L, AnswerP2 = 1624057680L;
         List<GridLocation> redTiles;
         List<(GridLocation a, GridLocation b, long surface)> uniqueCombos;
-        PerformanceList<(GridLocation a, GridLocation b)> lineSegments;
+        List<(GridLocation a, GridLocation b)> lineSegments;
+        HashSet<(GridLocation a, GridLocation b)> segmentsThatHit = [];
         public Day9() : base(9) {
             if (Test)
             {
@@ -44,7 +45,7 @@ namespace AoC2025
         {
             redTiles = [.. Input.ToLines().Select(x => x.Split(',').AsInt32s().AsValueTuple()).Select(x => new GridLocation(x.Item1, x.Item2))];
             uniqueCombos = [.. redTiles.GetPermutations(2, allowDupe: false).Select(x => x.AsValueTuple()).Select(x => (x.Item1, x.Item2, x.Item1.Surface(x.Item2))).OrderByDescending(x => x.Item3)];
-            lineSegments = new(redTiles.Zip(redTiles.Skip(1)));
+            lineSegments = [.. redTiles.Zip(redTiles.Skip(1))];
             lineSegments.Add((redTiles.Last(), redTiles.First()));
         }
         void Part1()
@@ -65,10 +66,8 @@ namespace AoC2025
             {
                 gfx.FillRectangle(Brushes.White, new Rectangle(0, 0, imageSize, imageSize));
                 gfx.FillRectangle(Brushes.Black, new RectangleF(square.topLeft.Column * scale, square.topLeft.Row * scale, (square.bottomRight.Column - square.topLeft.Column) * scale, (square.bottomRight.Row - square.topLeft.Row) * scale));
-                (GridLocation a, GridLocation b) segment;
-                foreach (var scoredSegment in lineSegments.EnumerateByBestScore())
+                foreach (var segment in lineSegments)
                 {
-                    segment = scoredSegment.item;
                     row = segment.a.Row;
                     col = segment.a.Column;
                     if (row == segment.b.Row)
@@ -95,7 +94,6 @@ namespace AoC2025
                                 if (printDebug) Console.WriteLine($"intersects!");
                                 // intersects with our shape!
                                 gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
-                                lineSegments.IncreaseScore(scoredSegment.index);
                                 match = false;
                                 break;
                             }
@@ -129,7 +127,6 @@ namespace AoC2025
                             {
                                 // intersects with our shape!
                                 if (Test) Console.WriteLine($"intersects!");
-                                lineSegments.IncreaseScore(scoredSegment.index);
                                 gfx.DrawLine(Pens.Red, new PointF(segment.a.Column * scale, segment.a.Row * scale), new PointF(segment.b.Column * scale, segment.b.Row * scale));
                                 match = false;
                                 break;
@@ -153,73 +150,74 @@ namespace AoC2025
             {
                 // check if it intersects with any lines, if it does, scrap it.
                 var square = candidate.a.Square(candidate.b);
-                bool match = true;
-                int row, col, from, to;
-                (GridLocation a, GridLocation b) segment;
-                foreach (var scoredSegment in lineSegments.EnumerateByBestScore())
+                bool checkIntersects(IEnumerable<(GridLocation a, GridLocation b)> segments)
                 {
-                    segment = scoredSegment.item;
-                    row = segment.a.Row;
-                    col = segment.a.Column;
-                    if (row == segment.b.Row)
+                    int row, col, from, to;
+                    bool match = true;
+                    foreach (var segment in lineSegments)
                     {
-                        from = Math.Min(col, segment.b.Column);
-                        to = Math.Max(col, segment.b.Column);
-                        // horizontal
-                        if (row <= square.topLeft.Row || row >= square.bottomRight.Row)
+                        row = segment.a.Row;
+                        col = segment.a.Column;
+                        if (row == segment.b.Row)
                         {
-                            // does not intersect
-                        }
-                        else
-                        {
-                            // check col.
-                            if (
-                                square.topLeft.Column < to
-                                &&
-                                square.bottomRight.Column > from
-                            )
-                            {
-                                // intersects with our shape!
-                                lineSegments.IncreaseScore(scoredSegment.index);
-                                match = false;
-                                break;
-                            }
-                            else
-                            {
-                                // no intersection
-                            }
-                        }
-                    }
-                    // vertical (e.g. column == column)
-                    else
-                    {
-                        from = Math.Min(row, segment.b.Row);
-                        to = Math.Max(row, segment.b.Row);
-                        if (col <= square.topLeft.Column || col >= square.bottomRight.Column)
-                        {
-                            // does not intersect
-                        }
-                        else
-                        {
-                            // check rows.
-                            if (
-                                square.topLeft.Column < to
-                                &&
-                                square.bottomRight.Column > from
-                            )
-                            {
-                                // intersects with our shape!
-                                lineSegments.IncreaseScore(scoredSegment.index);
-                                match = false;
-                                break;
-                            }
-                            else
+                            from = Math.Min(col, segment.b.Column);
+                            to = Math.Max(col, segment.b.Column);
+                            // horizontal
+                            if (row <= square.topLeft.Row || row >= square.bottomRight.Row)
                             {
                                 // does not intersect
                             }
+                            else
+                            {
+                                // check col.
+                                if (
+                                    square.topLeft.Column < to
+                                    &&
+                                    square.bottomRight.Column > from
+                                )
+                                {
+                                    // intersects with our shape!
+                                    match = false;
+                                    break;
+                                }
+                                else
+                                {
+                                    // no intersection
+                                }
+                            }
+                        }
+                        // vertical (e.g. column == column)
+                        else
+                        {
+                            from = Math.Min(row, segment.b.Row);
+                            to = Math.Max(row, segment.b.Row);
+                            if (col <= square.topLeft.Column || col >= square.bottomRight.Column)
+                            {
+                                // does not intersect
+                            }
+                            else
+                            {
+                                // check rows.
+                                if (
+                                    square.topLeft.Column < to
+                                    &&
+                                    square.bottomRight.Column > from
+                                )
+                                {
+                                    // intersects with our shape!
+                                    match = false;
+                                    break;
+                                }
+                                else
+                                {
+                                    // does not intersect
+                                }
+                            }
                         }
                     }
+                    return match;
                 }
+                bool match = checkIntersects(segmentsThatHit) || checkIntersects(lineSegments);
                 if (match)
                 {
                     p2 = candidate.surface;
