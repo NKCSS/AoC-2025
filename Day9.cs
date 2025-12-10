@@ -21,7 +21,6 @@ namespace AoC2025
         List<GridLocation> redTiles;
         List<(GridLocation a, GridLocation b, long surface)> uniqueCombos;
         List<(GridLocation a, GridLocation b)> lineSegments;
-        HashSet<(GridLocation a, GridLocation b)> segmentsThatHit = [];
         public Day9() : base(9) {
             if (Test)
             {
@@ -47,6 +46,8 @@ namespace AoC2025
             uniqueCombos = [.. redTiles.GetPermutations(2, allowDupe: false).Select(x => x.AsValueTuple()).Select(x => (x.Item1, x.Item2, x.Item1.Surface(x.Item2))).OrderByDescending(x => x.Item3)];
             lineSegments = [.. redTiles.Zip(redTiles.Skip(1))];
             lineSegments.Add((redTiles.Last(), redTiles.First()));
+            // order by largest segments to see if that helps us eliminate quicker.
+            lineSegments.Sort((a, b) => a.a.Distance(a.b) > b.a.Distance(b.b) ? -1 : 1);
         }
         void Part1()
         {
@@ -217,7 +218,7 @@ namespace AoC2025
                     }
                     return match;
                 }
-                bool match = checkIntersects(segmentsThatHit) || checkIntersects(lineSegments);
+                bool match = checkIntersects(lineSegments);
                 if (match)
                 {
                     p2 = candidate.surface;
