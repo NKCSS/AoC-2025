@@ -6,6 +6,7 @@ using NKCSS.AoC;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using FracType = short;
 namespace AoC2025
 {
     public class Day10 : Solution
@@ -377,17 +378,17 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
             if (cols == 0) return target.All(t => t == 0) ? 0 : -1;
 
             // Build augmented matrix M[row, 0..cols-1] = A, M[row, cols] = b
-            var M = new Fraction<long>[rows, cols + 1];
+            var M = new Fraction<FracType>[rows, cols + 1];
             for (int i = 0; i < rows; ++i)
             {
-                M[i, cols] = new Fraction<long>(target[i], 1);
+                M[i, cols] = new Fraction<FracType>(target[i], 1);
             }
             for (int j = 0; j < cols; ++j)
             {
                 var vec = options[j];
                 if (vec.Length != rows) throw new ArgumentException("option vector length mismatch");
                 for (int i = 0; i < rows; ++i)
-                    M[i, j] = new Fraction<long>(vec[i], 1);
+                    M[i, j] = new Fraction<FracType>(vec[i], 1);
             }
 
             // Gauss-Jordan -> RREF
@@ -444,11 +445,11 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
             // If no free cols, unique rational solution -> must check integrality and non-negativity
             if (freeCols.Count == 0)
             {
-                var sol = new Fraction<long>[cols];
+                var sol = new Fraction<FracType>[cols];
                 for (int c = 0; c < cols; ++c)
                 {
                     int prow = pivotRowOfCol[c];
-                    if (prow == -1) sol[c] = Fraction<long>.Zero; else sol[c] = M[prow, cols];
+                    if (prow == -1) sol[c] = Fraction<FracType>.Zero; else sol[c] = M[prow, cols];
                 }
                 // check integers >=0
                 long sum = 0;
@@ -514,14 +515,14 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
             // (You could add incremental pruning by computing partial lower bounds.)
 
             int freeCount = orderedFree.Length;
-            var freeValues = new int[freeCount];
+            var freeValues = new FracType[freeCount];
 
             void CheckFullAssignment()
             {
                 // build full x as Fraction[]: free entries are integers; pivot entries determined by RREF rows
-                var x = new Fraction<long>[cols];
+                var x = new Fraction<FracType>[cols];
                 // set free vars
-                for (int k = 0; k < freeCount; ++k) x[orderedFree[k]] = new Fraction<long>(freeValues[k], 1);
+                for (int k = 0; k < freeCount; ++k) x[orderedFree[k]] = new Fraction<FracType>(freeValues[k], 1);
 
                 // compute pivot column values: for pivot column p with row prow:
                 // x[p] = M[prow, cols] - sum_{free f} M[prow, f] * x[f]
@@ -529,14 +530,14 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
                 {
                     int prow = pivotRowOfCol[p];
                     if (prow == -1) continue;
-                    Fraction<long> val = M[prow, cols];
+                    Fraction<FracType> val = M[prow, cols];
                     for (int k = 0; k < freeCount; ++k)
                     {
                         int fcol = orderedFree[k];
                         var coef = M[prow, fcol];
                         if (!coef.IsZero && freeValues[k] != 0)
                         {
-                            val = val - coef * new Fraction<long>(freeValues[k], 1);
+                            val = val - coef * new Fraction<FracType>(freeValues[k], 1);
                         }
                     }
                     x[p] = val;
@@ -576,7 +577,7 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
                 }
                 int ub = boundArray[idx];
                 // Try small-to-large values; trying low values first helps find low-cost solution early
-                for (int v = 0; v <= ub; ++v)
+                for (FracType v = 0; v <= ub; ++v)
                 {
                     freeValues[idx] = v;
                     Dfs(idx + 1, partialCost + v);
