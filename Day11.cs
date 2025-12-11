@@ -10,8 +10,8 @@ namespace AoC2025
     public class Day11 : Solution
     {
         const string Start = "you", End = "out", Server = "svr", DAC = "dac", FFT = "fft";
-        bool Test = true;
-        const long AnswerP1Test = 5, AnswerP2Test = 2, AnswerP1 = 658, AnswerP2 = -1L;
+        bool Test = false;
+        const long AnswerP1Test = 5, AnswerP2Test = 2, AnswerP1 = 658, AnswerP2 = 371113003846800L;
         Dictionary<string, HashSet<string>> parsed;
         IdType start, end, svr, dac, fft;
         public Day11() : base(11) {
@@ -79,6 +79,7 @@ namespace AoC2025
             {
                 dac = inverseLookup[DAC];
                 fft = inverseLookup[FFT];
+                if(!Test) start = inverseLookup[Start];
             }
             else
             {
@@ -88,9 +89,9 @@ namespace AoC2025
             parsed.Add(End, []);
         }
         Dictionary<uint, long> cache = [];
-        long ExploreUniquePaths(IdType start, IdType next, IdType end)
+        long ExploreUniquePaths(IdType next, IdType end)
         {
-            uint cacheKey = MakeKey(start, next);
+            uint cacheKey = MakeKey(end, next);
             if (cache.TryGetValue(cacheKey, out long val)) return val;
             if (next == end)
             {
@@ -98,7 +99,7 @@ namespace AoC2025
             }
             var paths = parsed[lookup[next]];
             if (paths.Count == 0) return 0;
-            long result = paths.Sum(x => ExploreUniquePaths(start, inverseLookup[x], end));
+            long result = paths.Sum(x => ExploreUniquePaths(inverseLookup[x], end));
             cache.Add(cacheKey, result);
             return result;
         }
@@ -140,44 +141,33 @@ namespace AoC2025
                 }
             }
             Console.WriteLine($"Part 1: {p1}");
-            var alt = ExploreUniquePaths(start, start, end);
+            var alt = ExploreUniquePaths(start, end);
             Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
         uint MakeKey(IdType a, IdType b) => ((uint)a << 16) + (uint)b;
         void Part2()
         {
+            cache.Clear();
             //dac=>fft:0
             long p2 = 0L;
+            // Optimize for the only valid paths
             List<(IdType from, IdType to)> queue = [
-                (dac, fft),
+                //(dac, fft),
                 (fft, dac),
-                (svr, dac),
+                //(svr, dac),
                 (svr, fft),
                 (dac, end),
-                (fft, end)
+                //(fft, end)
             ];
-            List<List<IdType>> ways;
-            Dictionary<uint, int> results = [];
+            long ways;
+            Dictionary<uint, long> results = [];
             foreach (var q in queue)
             {
-                cache.Clear();
-                uint key = MakeKey(q.from, q.to);
-                ways = [.. FindAllPaths(q.from, q.to)];
-                long altWays = ExploreUniquePaths(q.from, q.from, q.to);
-                results.Add(key, ways.Count);
-                Console.WriteLine($"{lookup[q.from]}=>{lookup[q.to]}:{ways.Count} (alt: {altWays})");
+                ways = ExploreUniquePaths(q.from, q.to);
+                results.Add(MakeKey(q.from, q.to), ExploreUniquePaths(q.from, q.to));
+                if (Test) Console.WriteLine($"{lookup[q.from]}=>{lookup[q.to]}:{ways}");
             }
             p2 = (long)results[MakeKey(svr, fft)] * (long)results[MakeKey(fft, dac)] * (long)results[MakeKey(dac, end)];
-            /*
-            List<List<IdType>> dac2fft = [.. FindAllPaths(dac, fft)],
-                fft2dac = [.. FindAllPaths(fft, dac)],
-                srv2dac = [.. FindAllPaths(svr, dac)],
-                srv2ftt = [.. FindAllPaths(svr, fft)],
-                dac2end = [.. FindAllPaths(dac, end)],
-                fft2end = [.. FindAllPaths(fft, end)];
-            */
-            // svr->dac,fft->out
-
             // valid paths: svr->dac->fft->out or svr->fft->dac->out
             // dac->fft never happens, so only path is: svr->fft->dac->out
             Console.WriteLine($"Part 2: {p2}");
