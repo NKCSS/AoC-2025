@@ -19,176 +19,177 @@ namespace AoC2025
         //light diagram in [square brackets], one or more button wiring schematics in (parentheses),
         // and joltage requirements in {curly braces}.
         //[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
-public record Machine
-{
-    public required bool[] lightDiagram { get; set; }
-    public required bool[] state { get; set; }
-    public required short[] joltage { get; set; }
-    public required List<List<int>> wireingSchematics { get; set; }
-    public required short[] joltageRequirements { get; set; }
-    [SetsRequiredMembers]
-    public Machine(string raw)
-    {
-        string[] parts = [.. raw.SplitByASCIIWhiteSpace()];
-        string diagram = parts[0];
-        this.lightDiagram = new bool[diagram.Length - 2];
-        for (int i = 1, len = diagram.Length; i < len - 1; ++i)
+        public record Machine
         {
-            lightDiagram[i - 1] = diagram[i] == LightOnTarget;
-        }
-        joltageRequirements = [..parts[parts.Length -1][1..^1].Split(',').AsInt32s().Select(x => (short)x)];
-        wireingSchematics = new();
-        for (int i = 1, len = parts.Length; i < len - 1; ++i)
-        {
-            wireingSchematics.Add(parts[i][1..^1].Split(',').AsInt32s());
-        }
-        // default state == off
-        ResetState();
-    }
-    public string AsStateRaw(bool[] values) => $"{string.Join(string.Empty, values.Select(x => x ? LightOnTarget : LightOff))}";
-    public void ResetState() => state = new bool[lightDiagram.Length];
-    public void ResetJoltageState() => joltage = new short[lightDiagram.Length];
-    public void Push(int index)
-    {
-        foreach (int indexToToggle in wireingSchematics[index])
-        {
-            this.state[indexToToggle] = !this.state[indexToToggle];
-        }
-    }
-    public void PushJoltage(int index)
-    {
-        foreach (int indexToToggle in wireingSchematics[index])
-        {
-            ++this.joltage[indexToToggle];
-        }
-    }
-    public void Push(IEnumerable<int> indexes)
-    {
-        foreach (int index in indexes)
-            Push(index);
-    }
-    public string GetState() => AsStateRaw(state);
-    public List<List<int>> GetPossibleButtonCombos(int? cap = null)
-    {
-        List<List<int>> uniqueCombos = [];
-        List<int> index = [..Enumerable.Range(0, wireingSchematics.Count)];
-        cap ??= wireingSchematics.Count;
-        for (int i = 1, len = cap.Value; i <= len; ++i)
-        {
-            uniqueCombos.AddRange([.. index.GetPermutations(i, allowDupe: false).Select(x => x.ToList())]);
-        }
-        return uniqueCombos;
-    }
-    public Dictionary<string, List<List<int>>> MapAllOutComes()
-    {
-        List<List<int>> uniqueCombos = [..GetPossibleButtonCombos().OrderBy(x => x.Count)];
-        Dictionary<string, List<List<int>>> result = [];
-        foreach (var combo in uniqueCombos)
-        {
-            ResetState();
-            foreach (var buttonIndex in combo)
-                Push(buttonIndex);
-            string state = GetState();
-            if (!result.TryGetValue(state, out var solutions))
+            public required bool[] lightDiagram { get; set; }
+            public required bool[] state { get; set; }
+            public required short[] joltage { get; set; }
+            public required List<List<int>> wireingSchematics { get; set; }
+            public required short[] joltageRequirements { get; set; }
+            [SetsRequiredMembers]
+            public Machine(string raw)
             {
-                solutions = [];
-                result.Add(state, solutions);
-            }
-            solutions.Add(combo);
-        }
-        return result;
-    }
-    public List<(short[] joltages, List<List<int>> solutions)> MapAllJoltageOutComes(int? cap = null)
-    {
-        List<List<int>> uniqueCombos = [.. GetPossibleButtonCombos(cap).OrderBy(x => x.Count)];
-        Dictionary<string, (short[] joltages, List<List<int>> solutions)> result = [];
-        foreach (var combo in uniqueCombos)
-        {
-            ResetJoltageState();
-            foreach (var buttonIndex in combo)
-                PushJoltage(buttonIndex);
-            short[] joltage = [.. this.joltage];
-            string state = string.Join(",", joltage);
-            if (!result.TryGetValue(state, out var solutions))
-            {
-                solutions = (joltage, []);
-                result.Add(state, solutions);
-            }
-            solutions.solutions.Add(combo);
-        }
-        return [..result.Values];
-    }
-    public int Solve()
-    {
-        var options = MapAllOutComes();
-        string desiredState = AsStateRaw(lightDiagram);
-        if (options.TryGetValue(desiredState, out var solutions))
-        {
-            return solutions.OrderBy(x => x.Count).First().Count;
-        }
-        else
-        {
-            return -1;
-        }
-    }
-    public long SolveJoltage()
-    {
-        var options = MapAllJoltageOutComes(1);
-        List<(short[] joltages, int count)> bestOptions = [];
-        foreach (var option in options)
-        {
-            var best = option.solutions.OrderBy(x => x.Count).First();
-            bestOptions.Add((option.joltages, best.Count));
-        }
-        int numberOfOptions = bestOptions.Count;
-        //Dictionary<string, (Dictionary<int, int> optionsExplored, byte[] joltages, long count)> cache = [];
-        HashSet<string> cache = [];
-        PriorityQueue<(short[] joltages, Dictionary<int, int> optionsExplored, long count), long> q = new();
-        q.Enqueue((new short[lightDiagram.Length], [], 0L), 0L);
-        int joltageCount = this.joltage.Length;
-        while (q.Count > 0)
-        {
-            var candidate = q.Dequeue();
-            if (candidate.joltages.SequenceEqual(this.joltageRequirements))
-            {
-                // match found
-                return candidate.count;
-            }
-            for (int i = 0; i < numberOfOptions; ++i)
-            {
-                var option = bestOptions[i];
-                Dictionary<int, int> localOptionsExplored = candidate.optionsExplored.ToDictionary();
-                if (!localOptionsExplored.TryGetValue(i, out int optionCount))
+                string[] parts = [.. raw.SplitByASCIIWhiteSpace()];
+                string diagram = parts[0];
+                this.lightDiagram = new bool[diagram.Length - 2];
+                for (int i = 1, len = diagram.Length; i < len - 1; ++i)
                 {
-                    localOptionsExplored.Add(i, 1);
+                    lightDiagram[i - 1] = diagram[i] == LightOnTarget;
                 }
-                else localOptionsExplored[i] = optionCount + 1;
-                string key = string.Join(",",localOptionsExplored.Keys.OrderBy(x => x).Select(x => $"{x}:{localOptionsExplored[x]}"));
-                if (!cache.Contains(key))
+                joltageRequirements = [.. parts[parts.Length - 1][1..^1].Split(',').AsInt32s().Select(x => (short)x)];
+                wireingSchematics = new();
+                for (int i = 1, len = parts.Length; i < len - 1; ++i)
                 {
-                    short[] newJoltage = [.. candidate.joltages.WithIndexes().Select((x) => (short)(x.value + option.joltages[x.index]))];
-                    bool enqueue = true;
-                    for (int j = 0; j < joltageCount; ++j)
+                    wireingSchematics.Add(parts[i][1..^1].Split(',').AsInt32s());
+                }
+                // default state == off
+                ResetState();
+            }
+            public string AsStateRaw(bool[] values) => $"{string.Join(string.Empty, values.Select(x => x ? LightOnTarget : LightOff))}";
+            public void ResetState() => state = new bool[lightDiagram.Length];
+            public void ResetJoltageState() => joltage = new short[lightDiagram.Length];
+            public void Push(int index)
+            {
+                foreach (int indexToToggle in wireingSchematics[index])
+                {
+                    this.state[indexToToggle] = !this.state[indexToToggle];
+                }
+            }
+            public void PushJoltage(int index)
+            {
+                foreach (int indexToToggle in wireingSchematics[index])
+                {
+                    ++this.joltage[indexToToggle];
+                }
+            }
+            public void Push(IEnumerable<int> indexes)
+            {
+                foreach (int index in indexes)
+                    Push(index);
+            }
+            public string GetState() => AsStateRaw(state);
+            public List<List<int>> GetPossibleButtonCombos(int? cap = null)
+            {
+                List<List<int>> uniqueCombos = [];
+                List<int> index = [.. Enumerable.Range(0, wireingSchematics.Count)];
+                cap ??= wireingSchematics.Count;
+                for (int i = 1, len = cap.Value; i <= len; ++i)
+                {
+                    uniqueCombos.AddRange([.. index.GetPermutations(i, allowDupe: false).Select(x => x.ToList())]);
+                }
+                return uniqueCombos;
+            }
+            public Dictionary<string, List<List<int>>> MapAllOutComes()
+            {
+                List<List<int>> uniqueCombos = [.. GetPossibleButtonCombos().OrderBy(x => x.Count)];
+                Dictionary<string, List<List<int>>> result = [];
+                foreach (var combo in uniqueCombos)
+                {
+                    ResetState();
+                    foreach (var buttonIndex in combo)
+                        Push(buttonIndex);
+                    string state = GetState();
+                    if (!result.TryGetValue(state, out var solutions))
                     {
-                        if (newJoltage[j] > joltageRequirements[j])
+                        solutions = [];
+                        result.Add(state, solutions);
+                    }
+                    solutions.Add(combo);
+                }
+                return result;
+            }
+            public List<(short[] joltages, List<List<int>> solutions)> MapAllJoltageOutComes(int? cap = null)
+            {
+                List<List<int>> uniqueCombos = [.. GetPossibleButtonCombos(cap).OrderBy(x => x.Count)];
+                Dictionary<string, (short[] joltages, List<List<int>> solutions)> result = [];
+                foreach (var combo in uniqueCombos)
+                {
+                    ResetJoltageState();
+                    foreach (var buttonIndex in combo)
+                        PushJoltage(buttonIndex);
+                    short[] joltage = [.. this.joltage];
+                    string state = string.Join(",", joltage);
+                    if (!result.TryGetValue(state, out var solutions))
+                    {
+                        solutions = (joltage, []);
+                        result.Add(state, solutions);
+                    }
+                    solutions.solutions.Add(combo);
+                }
+                return [.. result.Values];
+            }
+            public int Solve()
+            {
+                var options = MapAllOutComes();
+                string desiredState = AsStateRaw(lightDiagram);
+                if (options.TryGetValue(desiredState, out var solutions))
+                {
+                    return solutions.OrderBy(x => x.Count).First().Count;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+            public long SolveJoltage()
+            {
+                var options = MapAllJoltageOutComes(1);
+                List<(short[] joltages, int count)> bestOptions = [];
+                foreach (var option in options)
+                {
+                    var best = option.solutions.OrderBy(x => x.Count).First();
+                    bestOptions.Add((option.joltages, best.Count));
+                }
+                int numberOfOptions = bestOptions.Count;
+                //Dictionary<string, (Dictionary<int, int> optionsExplored, byte[] joltages, long count)> cache = [];
+                HashSet<string> cache = [];
+                PriorityQueue<(short[] joltages, Dictionary<int, int> optionsExplored, long count), long> q = new();
+                q.Enqueue((new short[lightDiagram.Length], [], 0L), 0L);
+                int joltageCount = this.joltage.Length;
+                while (q.Count > 0)
+                {
+                    var candidate = q.Dequeue();
+                    if (candidate.joltages.SequenceEqual(this.joltageRequirements))
+                    {
+                        // match found
+                        return candidate.count;
+                    }
+                    for (int i = 0; i < numberOfOptions; ++i)
+                    {
+                        var option = bestOptions[i];
+                        Dictionary<int, int> localOptionsExplored = candidate.optionsExplored.ToDictionary();
+                        if (!localOptionsExplored.TryGetValue(i, out int optionCount))
                         {
-                            enqueue = false;
-                            break;
+                            localOptionsExplored.Add(i, 1);
+                        }
+                        else localOptionsExplored[i] = optionCount + 1;
+                        string key = string.Join(",", localOptionsExplored.Keys.OrderBy(x => x).Select(x => $"{x}:{localOptionsExplored[x]}"));
+                        if (!cache.Contains(key))
+                        {
+                            short[] newJoltage = [.. candidate.joltages.WithIndexes().Select((x) => (short)(x.value + option.joltages[x.index]))];
+                            bool enqueue = true;
+                            for (int j = 0; j < joltageCount; ++j)
+                            {
+                                if (newJoltage[j] > joltageRequirements[j])
+                                {
+                                    enqueue = false;
+                                    break;
+                                }
+                            }
+                            if (enqueue) q.Enqueue((newJoltage, localOptionsExplored, candidate.count + option.count), candidate.count + option.count);
+                            //cache.Add(key, (localOptionsExplored, candidate.joltages, candidate.count));
+                            cache.Add(key);
                         }
                     }
-                    if (enqueue) q.Enqueue((newJoltage, localOptionsExplored, candidate.count + option.count), candidate.count + option.count);
-                    //cache.Add(key, (localOptionsExplored, candidate.joltages, candidate.count));
-                    cache.Add(key);
                 }
+                return -1L;
             }
+            public override string ToString()
+            => $"[{AsStateRaw(lightDiagram)}] ({string.Join(") (", wireingSchematics.Select(x => string.Join(",", x.ToArray())))}) {{{string.Join(",", joltageRequirements)}}}";
         }
-        return -1L;
-    }
-    public override string ToString()
-    => $"[{AsStateRaw(lightDiagram)}] ({string.Join(") (", wireingSchematics.Select(x => string.Join(",", x.ToArray())))}) {{{string.Join(",", joltageRequirements)}}}";
-}
         List<Machine> machines = [];
-        public Day10() : base(10) {
+        public Day10() : base(10)
+        {
             if (Test)
             {
                 // Paste test input here...
@@ -202,7 +203,7 @@ public record Machine
             {
                 Machine m = new(line);
                 machines.Add(m);
-                if(!m.ToString().Equals(line))
+                if (!m.ToString().Equals(line))
                 {
                     Console.WriteLine($"Parse mismatch! '{line}' -> '{m.ToString()}'");
                 }
@@ -250,17 +251,17 @@ public record Machine
         void Part2()
         {
             long p2 = 0L;
-            const bool PrintBest = false, TrySolve =false;
+            const bool PrintBest = false, TrySolve = false;
             if (PrintBest)
                 foreach (var machine in machines)
-{
-var options = machine.MapAllJoltageOutComes(1);
-List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
-    ..options
+                {
+                    var options = machine.MapAllJoltageOutComes(1);
+                    List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
+                        ..options
     .Select(x => ( best: x.solutions.OrderByDescending(y => y.Count).First(), joltages: x.joltages))
     .Select(x => (x.best, x.joltages, efficiency: x.joltages.Sum(x => x) / (double)x.best.Count))
     .OrderByDescending(x => x.efficiency)
-    ];
+                        ];
                     foreach (var option in bestOptions)
                     {
                         Console.WriteLine($"We can achieve {string.Join(",", option.joltages)} in {option.best.Count} ways; best = {string.Join(",", option.best)}. Efficency: {option.efficiency:F2}");
@@ -276,10 +277,10 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
                     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {answer}");
                 }
 
-            foreach(var machine in machines)
+            foreach (var machine in machines)
             {
-                List<short[]> singlePressOptions = [..machine.MapAllJoltageOutComes(1).Select(o => o.joltages)];
-                long minPresses = JoltageSolver.SolveMinimumPresses(singlePressOptions, machine.joltageRequirements, freeVarEnumerateLimit: 20);
+                List<short[]> singlePressOptions = [.. machine.MapAllJoltageOutComes(1).Select(o => o.joltages)];
+                long minPresses = JoltageSolver.SolveMinimumPresses(singlePressOptions, machine.joltageRequirements, freeVarEnumerateLimit: 3); // Not sure why, but 3 is the lowest value I can pass here, though there is no performance benefit over passing 20.
                 p2 += minPresses;
                 //Console.WriteLine($"{machine.ToString()} => {minPresses}");
             }
@@ -313,8 +314,6 @@ List<(List<int> best, short[] joltages, double efficiency)> bestOptions = [
         public void Day10_Part2() => Part2();
         #endregion
     }
-
-
     #region ChatGPT
     public readonly struct Fraction<T> where T : INumber<T>
     {

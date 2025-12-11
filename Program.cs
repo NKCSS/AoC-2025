@@ -2,4 +2,4 @@
 using System.Diagnostics;
 using System.Text;
 Console.OutputEncoding = Encoding.UTF8;
-new Day10();
+new Day11();
