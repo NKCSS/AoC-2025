@@ -10,8 +10,8 @@ namespace AoC2025
     public class Day11 : Solution
     {
         const string Start = "you", End = "out", Server = "svr", DAC = "dac", FFT = "fft";
-        bool Test = false;
-        const long AnswerP1Test = 5, AnswerP2Test = -1, AnswerP1 = 658, AnswerP2 = -1L;
+        bool Test = true;
+        const long AnswerP1Test = 5, AnswerP2Test = 2, AnswerP1 = 658, AnswerP2 = -1L;
         Dictionary<string, HashSet<string>> parsed;
         IdType start, end, svr, dac, fft;
         public Day11() : base(11) {
@@ -33,6 +33,25 @@ namespace AoC2025
             }
             PrepareInput();
             Part1();
+            if (Test)
+            {
+                Input = """
+                    svr: aaa bbb
+                    aaa: fft
+                    fft: ccc
+                    bbb: tty
+                    tty: ccc
+                    ccc: ddd eee
+                    ddd: hub
+                    hub: fff
+                    eee: dac
+                    dac: fff
+                    fff: ggg hhh
+                    ggg: out
+                    hhh: out
+                    """;
+            }
+            PrepareInput();
             Part2();
         }
         Dictionary<IdType, string> lookup;
@@ -55,11 +74,16 @@ namespace AoC2025
             }
             inverseLookup = lookup.ToDictionary(x => x.Value, x => x.Key);
             inverseLookup.Add(End, (IdType)inverseLookup.Count);
-            start = inverseLookup[Start];
             end = inverseLookup[End];
-            svr = inverseLookup[Server];
-            dac = inverseLookup[DAC];
-            fft = inverseLookup[FFT];
+            if (inverseLookup.TryGetValue(Server, out svr))
+            {
+                dac = inverseLookup[DAC];
+                fft = inverseLookup[FFT];
+            }
+            else
+            {
+                start = inverseLookup[Start];
+            }
             lookup.Add(end, End);
             parsed.Add(End, []);
         }
@@ -72,8 +96,10 @@ namespace AoC2025
             {
                 return 1L;
             }
-            long result = parsed[lookup[next]].Sum(x => ExploreUniquePaths([.. path, next], inverseLookup[x], end));
-            cache[cacheKey] = result;
+            var paths = parsed[lookup[next]];
+            if (paths.Count == 0) return 0;
+            long result = paths.Sum(x => ExploreUniquePaths([.. path, next], inverseLookup[x], end));
+            cache.Add(cacheKey, result);
             return result;
         }
         IEnumerable<List<IdType>> FindAllPaths(IdType from, IdType to)
@@ -106,7 +132,7 @@ namespace AoC2025
             // find all unique ways to go from start to end.
             List<List<IdType>> ways = [.. FindAllPaths(start, end)];
             p1 = ways.Count;
-            if(Test)
+            if (Test)
             {
                 foreach (var way in ways)
                 {
@@ -121,21 +147,26 @@ namespace AoC2025
         {
             //dac=>fft:0
             long p2 = 0L;
+            uint MakeKey(IdType a, IdType b) => ((uint)a << 16) + (uint)b;
             List<(IdType from, IdType to)> queue = [
                 (dac, fft),
-                //(fft, dac),
-                //(svr, dac),
+                (fft, dac),
+                (svr, dac),
                 (svr, fft),
                 (dac, end),
                 (fft, end)
             ];
-            //List<List<IdType>> ways;
+            List<List<IdType>> ways;
+            Dictionary<uint, int> results = [];
             foreach (var q in queue)
             {
-                //ways = [.. FindAllPaths(q.from, q.to)];
-                long ways = ExploreUniquePaths([], q.from, q.to);
-                Console.WriteLine($"{lookup[q.from]}=>{lookup[q.to]}:{ways}");
+                uint key = MakeKey(q.from, q.to);
+                ways = [.. FindAllPaths(q.from, q.to)];
+                long altWays = ExploreUniquePaths([], q.from, q.to);
+                results.Add(key, ways.Count);
+                Console.WriteLine($"{lookup[q.from]}=>{lookup[q.to]}:{ways.Count} (alt: {altWays})");
             }
+            p2 = (long)results[MakeKey(svr, fft)] * (long)results[MakeKey(fft, dac)] * (long)results[MakeKey(dac, end)];
             /*
             List<List<IdType>> dac2fft = [.. FindAllPaths(dac, fft)],
                 fft2dac = [.. FindAllPaths(fft, dac)],
@@ -146,8 +177,8 @@ namespace AoC2025
             */
             // svr->dac,fft->out
 
-            Console.WriteLine($"");
-            
+            // valid paths: svr->dac->fft->out or svr->fft->dac->out
+            // dac->fft never happens, so only path is: svr->fft->dac->out
             Console.WriteLine($"Part 2: {p2}");
             Debug.Assert(p2 == (Test ? AnswerP2Test : AnswerP2), "You broke Part 2!");
         }
