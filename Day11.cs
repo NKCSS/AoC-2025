@@ -87,10 +87,10 @@ namespace AoC2025
             lookup.Add(end, End);
             parsed.Add(End, []);
         }
-        Dictionary<string, long> cache = [];
-        long ExploreUniquePaths(List<IdType> path, IdType next, IdType end)
+        Dictionary<uint, long> cache = [];
+        long ExploreUniquePaths(IdType start, IdType next, IdType end)
         {
-            string cacheKey = $"{string.Join(",", path)},{next}";
+            uint cacheKey = MakeKey(start, next);
             if (cache.TryGetValue(cacheKey, out long val)) return val;
             if (next == end)
             {
@@ -98,7 +98,7 @@ namespace AoC2025
             }
             var paths = parsed[lookup[next]];
             if (paths.Count == 0) return 0;
-            long result = paths.Sum(x => ExploreUniquePaths([.. path, next], inverseLookup[x], end));
+            long result = paths.Sum(x => ExploreUniquePaths(start, inverseLookup[x], end));
             cache.Add(cacheKey, result);
             return result;
         }
@@ -140,14 +140,14 @@ namespace AoC2025
                 }
             }
             Console.WriteLine($"Part 1: {p1}");
-            var alt = ExploreUniquePaths([], start, end);
+            var alt = ExploreUniquePaths(start, start, end);
             Debug.Assert(p1 == (Test ? AnswerP1Test : AnswerP1), "You broke Part 1!");
         }
+        uint MakeKey(IdType a, IdType b) => ((uint)a << 16) + (uint)b;
         void Part2()
         {
             //dac=>fft:0
             long p2 = 0L;
-            uint MakeKey(IdType a, IdType b) => ((uint)a << 16) + (uint)b;
             List<(IdType from, IdType to)> queue = [
                 (dac, fft),
                 (fft, dac),
@@ -160,9 +160,10 @@ namespace AoC2025
             Dictionary<uint, int> results = [];
             foreach (var q in queue)
             {
+                cache.Clear();
                 uint key = MakeKey(q.from, q.to);
                 ways = [.. FindAllPaths(q.from, q.to)];
-                long altWays = ExploreUniquePaths([], q.from, q.to);
+                long altWays = ExploreUniquePaths(q.from, q.from, q.to);
                 results.Add(key, ways.Count);
                 Console.WriteLine($"{lookup[q.from]}=>{lookup[q.to]}:{ways.Count} (alt: {altWays})");
             }
