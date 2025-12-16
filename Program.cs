@@ -24,3 +24,4 @@ Console.OutputEncoding = Encoding.UTF8;
 //Console.WriteLine($"{test:B8} -> {reversed:B8}");
 //return;
 new Day12();
+

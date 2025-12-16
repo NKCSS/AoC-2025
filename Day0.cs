@@ -5,7 +5,7 @@ namespace AoC2025
 {
     public class Day0 : Solution
     {
-        bool Test = true;
+        const bool Test = true;
         const long AnswerP1Test = -1, AnswerP2Test = -1, AnswerP1 = -1L, AnswerP2 = -1L;
         public Day0() : base(0) {
             if (Test)
